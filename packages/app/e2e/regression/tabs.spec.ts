@@ -24,6 +24,70 @@ const c = { id: "ses_tab_c", title: "Tab C session" }
 
 test.use({ serviceWorkers: "block" })
 
+test("session tab backgrounds keep project colours across subdirectories, worktrees and reloads", async ({ page }) => {
+  const directory = "C:/OpenCode/ProjectColours"
+  const worktree = "C:/OpenCode/ProjectColours-worktree"
+  await mockWorkspace(page, {
+    name: "ProjectColours",
+    directory,
+    project: { sandboxes: [worktree] },
+    projects: [
+      project({ id: "proj_projectcolours", directory, sandboxes: [worktree] }),
+      project({ id: "proj_other", directory: "C:/OpenCode/Other" }),
+    ],
+    sessions: [
+      a,
+      { ...b, directory: `${directory}/packages/app` },
+      { ...c, directory: worktree },
+      { id: "ses_colour_other", title: "Other project", directory: "C:/OpenCode/Other", projectID: "proj_other" },
+    ],
+  })
+  await seed(page, {
+    storage: {
+      "opencode.global.dat:server": {
+        projectColors: { local: { proj_projectcolours: "orange" } },
+      },
+    },
+  })
+  await page.goto(sessionHref(a.id))
+
+  const tab = (id: string) =>
+    page.locator(`[data-titlebar-tab-slot]:has(a[href="${sessionHref(id)}"]) [data-titlebar-tab].tab-project-colour`)
+
+  await expect(tab(a.id)).toBeVisible()
+  await expect(tab(a.id)).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)")
+
+  const projectColor = await tab(a.id).evaluate((element) =>
+    getComputedStyle(element).getPropertyValue("--tab-project-color"),
+  )
+
+  const orange = await tab(a.id).evaluate((element) =>
+    getComputedStyle(element).getPropertyValue("--v2-avatar-bg-orange"),
+  )
+
+  expect(orange).not.toBe("")
+  expect(projectColor).toBe(orange)
+
+  const colour = await tab(a.id).evaluate((element) =>
+    getComputedStyle(element).backgroundColor,
+  )
+
+  await expect(tab(b.id)).toHaveCSS("background-color", colour)
+  await expect(tab(c.id)).toHaveCSS("background-color", colour)
+  await expect(tab("ses_colour_other")).toBeVisible()
+  await expect(tab("ses_colour_other")).not.toHaveCSS("background-color", colour)
+
+  const otherColour = await tab("ses_colour_other").evaluate((element) =>
+    getComputedStyle(element).backgroundColor,
+  )
+
+  await page.reload()
+  await expect(tab(a.id)).toHaveCSS("background-color", colour)
+  await expect(tab(b.id)).toHaveCSS("background-color", colour)
+  await expect(tab(c.id)).toHaveCSS("background-color", colour)
+  await expect(tab("ses_colour_other")).toHaveCSS("background-color", otherColour)
+})
+
 test("tab strip keeps draft tabs as wide as session tabs and navigates on mouse down", async ({ page }) => {
   const workspace = await mockWorkspace(page, {
     name: "Tabs",

@@ -11,6 +11,7 @@ import { useServerCtx } from "@/runtime/server/runtime"
 import { useLanguage } from "@/runtime/i18n/language"
 import { ServerConnection, serverName, useServers } from "@/runtime/server/registry"
 import { displayName } from "@opencode/ui/project-avatar"
+import { useProjectTabColor } from "@/fork/project-tab-colors"
 import { SessionTabAvatarView } from "@/shell/layout/session-tab-avatar"
 import { SessionProgressIndicatorV2 } from "@opencode/session-ui/v2/session-progress-indicator-v2"
 import type { SessionInfo } from "@opencode/client/promise"
@@ -56,6 +57,7 @@ export function TabNavItem(props: {
   }
 
   const servers = useServers()
+  const projectColor = useProjectTabColor(() => props.server, () => props.session?.projectID)
   const serverCtx = useServerCtx(() => servers.list.find((item) => ServerConnection.key(item) === props.server))
 
   const unread = () => !!props.session && !props.active && props.unread
@@ -234,7 +236,8 @@ export function TabNavItem(props: {
       data-title-overflow={titleOverflowing()}
       data-editing={editing()}
       class="group relative flex h-7 w-full min-w-0 select-none flex-row items-center gap-1.5 overflow-hidden whitespace-nowrap rounded-[6px] px-1.5 [container-type:inline-size]"
-      classList={{ invisible: props.hidden }}
+      classList={{ invisible: props.hidden, "tab-project-colour": !!projectColor() }}
+      style={{ "--tab-project-color": projectColor() ? `var(--v2-avatar-bg-${projectColor()})` : undefined }}
       data-active={props.active}
       data-unread={unread()}
       data-dragging={props.dragging}

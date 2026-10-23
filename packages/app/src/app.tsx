@@ -18,6 +18,7 @@ import { TabsProvider } from "@/shell/tabs/tabs"
 import { ErrorPage } from "@/shell/errors/error"
 import { AppRoutes, File, preloadRoute } from "@/shell/routes/routes"
 import { ExtensionRoot } from "@/runtime/extension/root"
+import { ProjectTabColorsProvider } from "@/fork/project-tab-colors"
 
 export { preloadRoute }
 
@@ -107,12 +108,14 @@ export function AppInterface(props: {
   )
 
   return (
-    <ServersProvider canonicalLocalServer={props.canonicalLocalServer} servers={props.servers}>
-      <SettingsProvider>
-        <Dynamic component={props.router ?? Router} root={Root}>
-          <AppRoutes />
-        </Dynamic>
-      </SettingsProvider>
-    </ServersProvider>
+    <ProjectTabColorsProvider>
+      <ServersProvider canonicalLocalServer={props.canonicalLocalServer} servers={props.servers}>
+        <SettingsProvider>
+          <Dynamic component={props.router ?? Router} root={Root}>
+            <AppRoutes />
+          </Dynamic>
+        </SettingsProvider>
+      </ServersProvider>
+    </ProjectTabColorsProvider>
   )
 }

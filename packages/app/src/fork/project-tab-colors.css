@@ -1,0 +1,24 @@
+[data-titlebar-tab].tab-project-colour {
+  --tab-project-tint: 25%;
+  --tab-base: color-mix(
+    in srgb,
+    var(--tab-project-color) var(--tab-project-tint),
+    var(--v2-background-bg-deep)
+  );
+}
+
+[data-color-scheme="dark"] [data-titlebar-tab].tab-project-colour {
+  --tab-project-tint: 80%;
+}
+
+[data-titlebar-tab].tab-project-colour [data-slot="tab-link"] {
+  color: var(--v2-text-text-base);
+}
+
+[data-titlebar-tab].tab-project-colour[data-active="true"] {
+  box-shadow: inset 0 0 0 1px var(--v2-border-border-strong);
+}
+
+[data-titlebar-tab].tab-project-colour[data-active="true"] [data-slot="tab-title"] {
+  font-weight: 600;
+}

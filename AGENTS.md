@@ -3,6 +3,15 @@
 - This repository does not use Changesets. Do not add `.changeset` files; follow the existing release workflow instead.
 - The default branch is `dev`. Base branches and worktrees on `origin/dev`, target PRs at `dev`, and diff against `origin/dev` unless told otherwise.
 
+## Personal Fork: Upstream Compatibility
+
+- The primary goal of this fork is to merge upstream OpenCode updates easily, with as little manual fixing as possible. Custom changes should have a high survival rate across upstream updates; optimize for long-term maintenance, not just a small initial implementation.
+- Prefer supported extension points when they cover the requirement. Otherwise, keep custom behavior, persistence, and styling in fork-owned modules, with the smallest practical integration into upstream code.
+- Avoid modifying upstream shared-state schemas, registries, core execution, and existing stylesheets for UI-only customizations when a separate module can own the behavior. Do not introduce speculative extension frameworks just to isolate one feature.
+- Preserve existing behavior and saved customization data when refactoring. Keep unrelated changes, formatting churn, and dependency changes out of customization patches.
+- Keep each customization independently understandable and, when committing, in a separate commit. Explain its upstream touchpoints and likely adaptation points.
+- Validate customizations after upstream updates with focused behavioral tests and the repository checks. A conflict-free merge is not proof that a customization still works.
+
 ## Live TUI Testing
 
 - Run `bun run dev:live` from a development worktree to test its TUI against the currently elected `opencode` background server and live sessions.
