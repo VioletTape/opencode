@@ -5,6 +5,7 @@
 
 ## Personal Fork: Upstream Compatibility
 
+- `local_feat/` records intentional, user-requested fork features, not upstream behavior. Consult the relevant record before refactoring or resolving upstream merge conflicts; preserve its acceptance criteria unless the user requests a change. Add or update a short ADR-style record when changing a local feature.
 - The primary goal of this fork is to merge upstream OpenCode updates easily, with as little manual fixing as possible. Custom changes should have a high survival rate across upstream updates; optimize for long-term maintenance, not just a small initial implementation.
 - Prefer supported extension points when they cover the requirement. Otherwise, keep custom behavior, persistence, and styling in fork-owned modules, with the smallest practical integration into upstream code.
 - Avoid modifying upstream shared-state schemas, registries, core execution, and existing stylesheets for UI-only customizations when a separate module can own the behavior. Do not introduce speculative extension frameworks just to isolate one feature.
