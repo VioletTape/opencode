@@ -209,7 +209,7 @@ function userRow(page: Page, messageID: string) {
   )
 }
 
-test("follow-up preference controls Enter while Mod+Enter uses the alternate delivery", async ({ page }) => {
+test("follow-up preference controls Enter while Mod+Alt+Enter uses the alternate delivery", async ({ page }) => {
   const mock = createQueueMock([])
   const view = await openQueue(page, mock, "queue")
 
@@ -219,7 +219,7 @@ test("follow-up preference controls Enter while Mod+Enter uses the alternate del
   await expect(view.rows.getByText("queue this follow-up", { exact: true })).toBeVisible()
 
   await view.input.fill("steer this correction")
-  await view.input.press("ControlOrMeta+Enter")
+  await view.input.press("ControlOrMeta+Alt+Enter")
   await expect.poll(() => mock.prompts.map((prompt) => prompt.delivery)).toEqual(["queue", "steer"])
   await expect(view.input).toHaveText("")
 })
@@ -430,7 +430,7 @@ for (const delivery of ["queue", "steer"] as const) {
     await view.input.pressSequentially(", edited")
     // The server delivers the original before the edit lands; this client has not heard yet.
     mock.rows.splice(1, 1)
-    await view.input.press(delivery === "queue" ? "Enter" : "ControlOrMeta+Enter")
+    await view.input.press(delivery === "queue" ? "Enter" : "ControlOrMeta+Alt+Enter")
 
     await expect(page.getByText("Request failed")).toBeVisible()
     await expect(view.input).toHaveText("second queued prompt, edited")

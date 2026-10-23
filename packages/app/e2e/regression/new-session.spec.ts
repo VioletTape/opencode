@@ -102,7 +102,7 @@ test("a pending worktree session shows immediately, keeps its draft, and hands o
   await draftFollowUp(page)
   await expect(submit(page)).toBeDisabled()
   await editor(page).press("Enter")
-  await editor(page).press("ControlOrMeta+Enter")
+  await editor(page).press("ControlOrMeta+Alt+Enter")
   await page.locator('[data-component="composer"]').dispatchEvent("submit")
   await expect(editor(page)).toHaveText(followUp)
   expect(mock.worktreeRequests.map((request) => request.body)).toEqual([expect.objectContaining({ from: directory })])

@@ -13,6 +13,7 @@ import {
   useSettings,
 } from "@/settings/model"
 import { formatKeybind } from "@/shell/commands/command"
+import { composerAlternateKeybind } from "@/fork/composer-newline"
 import { SettingsList } from "@/settings/list"
 import { SettingsRow } from "@/settings/row"
 import { createShellOptions, type ShellSettingsController } from "./controllers"
@@ -144,7 +145,7 @@ const FollowUpBehaviorSetting: Component = () => {
     <SettingsRow
       title={language.t("settings.general.row.followUpBehavior.title")}
       description={language.t("settings.general.row.followUpBehavior.description", {
-        keybind: formatKeybind("mod+enter", language.t),
+        keybind: formatKeybind(composerAlternateKeybind, language.t),
       })}
     >
       <Select

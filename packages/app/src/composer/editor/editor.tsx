@@ -45,6 +45,7 @@ import type {
 } from "../types"
 import type { ComposerEditorModel, ComposerSelectControl } from "./interaction"
 import { isAttachment } from "../prompt-parts"
+import { composerNewline } from "@/fork/composer-newline"
 import "../attachments/attachments.css"
 import "./editor.css"
 
@@ -255,6 +256,8 @@ export function ComposerEditor(props: ComposerEditorProps) {
               props.controller.onInput(prompt.map((part) => part.content).join(""), [...prompt, ...attachments], cursor)
             }}
             onKeyDown={(event) => {
+              if (composerNewline(event)) return
+
               if (!view.draftOnly && props.controller.onKeyDown(event)) return
               const mod = event.metaKey || event.ctrlKey
 
@@ -374,7 +377,7 @@ export function ComposerEditor(props: ComposerEditorProps) {
             <Show when={state.mode === "normal"}>
               <ComposerEditorAlternateDelivery
                 controller={props.controller}
-                keybind={props.alternateKeybind ?? ["Mod", "Enter"]}
+                keybind={props.alternateKeybind ?? ["Mod", "Alt", "Enter"]}
               />
             </Show>
             <Show when={state.mode === "shell"}>
@@ -1074,7 +1077,7 @@ function composerSuggestionMaxHeight(boundaryHeight: number, search: boolean) {
   )
 }
 
-// "Steer ⌘⏎" / "Queue ⌘⏎" hint next to the submit button: submits with the
+// Alternate-delivery hint next to the submit button: submits with the
 // delivery opposite to what plain Enter does. Visible only while the queue
 // exposes an alternate (turn running and composer holding a value), so it
 // disappears on its own when the current turn ends.

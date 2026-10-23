@@ -4,6 +4,54 @@ import { openDraft, openSession } from "../utils/workspace"
 
 test.use({ permissions: ["clipboard-read", "clipboard-write"] })
 
+test("Ctrl+Enter inserts a newline at the caret without sending or accepting suggestions", async ({ page }) => {
+  const prompts: unknown[] = []
+  const view = await openSession(page, {
+    name: "ComposerNewline",
+    onPrompt: (input) => void prompts.push(input.body),
+  })
+
+  await view.editor.fill("firstsecond")
+  await view.editor.press("Home")
+  await view.editor.press("ArrowRight")
+  await view.editor.press("ArrowRight")
+  await view.editor.press("ArrowRight")
+  await view.editor.press("ArrowRight")
+  await view.editor.press("ArrowRight")
+  await view.editor.press("Control+Enter")
+  await view.editor.pressSequentially("middle")
+  await expect(view.editor).toHaveText("first\nmiddlesecond")
+  expect(prompts).toEqual([])
+
+  await view.editor.fill("first selected second")
+  await view.editor.press("Home")
+  await view.editor.press("Control+ArrowRight")
+  await view.editor.press("Control+Shift+ArrowRight")
+  await view.editor.press("Control+Enter")
+  await view.editor.pressSequentially("replacement ")
+  await expect(view.editor).toHaveText("first \nreplacement second")
+  expect(prompts).toEqual([])
+
+  await view.editor.fill("/mo")
+  await expect(page.locator('[data-suggestion-id="model.choose"]')).toBeVisible()
+  await view.editor.press("Control+Enter")
+  await view.editor.pressSequentially("literal text")
+  await expect(view.editor).toHaveText("/mo\nliteral text")
+  await expect(page.getByRole("dialog")).toHaveCount(0)
+  expect(prompts).toEqual([])
+
+  await view.editor.fill("first")
+  await view.editor.press("Control+Enter")
+  await view.editor.pressSequentially("second")
+  await view.editor.press("Shift+Enter")
+  await view.editor.pressSequentially("third")
+  await expect(view.editor).toHaveText("first\nsecond\nthird")
+  expect(prompts).toEqual([])
+  await view.editor.press("Enter")
+  await expect.poll(() => prompts).toEqual([expect.objectContaining({ text: "first\nsecond\nthird" })])
+  await expect(view.editor).toHaveText("")
+})
+
 test("the free usage limit opens the Go dialog once, leaves a readable notice, and restores the prompt", async ({
   page,
   context,

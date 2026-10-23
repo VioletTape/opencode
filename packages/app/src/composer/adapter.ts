@@ -39,7 +39,7 @@ export type ComposerQueue = {
   undoing: Accessor<boolean>
   // Delivery a plain submit uses right now.
   delivery: Accessor<ComposerDelivery>
-  // Delivery offered on Mod+Enter and the toolbar hint button; undefined hides the hint.
+  // Delivery offered on the alternate shortcut and toolbar hint button; undefined hides the hint.
   alternate: Accessor<ComposerDelivery | undefined>
   // Inbox ID of the queued prompt currently loaded in the composer for editing.
   editing: Accessor<string | undefined>
