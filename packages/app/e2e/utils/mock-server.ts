@@ -75,7 +75,7 @@ export interface MockServerConfig {
     items: SessionMessageInfo[]
     cursor?: string
   }
-  vcs?: { current: string; default: string }
+  vcs?: { current: string; default: string } | ((directory: string) => { current: string; default: string })
   // Initializes the mock project's VCS; without a handler this mutation answers 501.
   onVcsInit?: (input: { directory: string; provider?: string }) => void
   vcsDiff?: unknown[] | ((input: { mode?: string }) => unknown[])
@@ -1002,10 +1002,18 @@ function mockHandlers(
                 }),
           ),
         formRequests: () => Effect.succeed({ location: location(config), data: resolve(config.forms ?? []) }),
-        vcs: () =>
-          Effect.succeed({
-            location: location(config),
-            data: { branch: config.vcs ?? { current: "main", default: "main" } },
+        vcs: (ctx) =>
+          Effect.sync(() => {
+            const directory = requestDirectory(config, ctx.request)
+
+            return {
+              location: location(config, directory),
+              data: {
+                branch: Predicate.isFunction(config.vcs)
+                  ? config.vcs(directory)
+                  : (config.vcs ?? { current: "main", default: "main" }),
+              },
+            }
           }),
         vcsInit: (ctx) => {
           if (!config.onVcsInit) return unsupported("initialize VCS", "onVcsInit")

@@ -24,6 +24,68 @@ const c = { id: "ses_tab_c", title: "Tab C session" }
 
 test.use({ serviceWorkers: "block" })
 
+test("session header keeps the active project's name and worktree branch visible", async ({ page }) => {
+  const directory = "C:/OpenCode/HeaderContext"
+  const worktree = "C:/OpenCode/HeaderContext-worktree"
+  const other = "C:/OpenCode/OtherContext"
+  const workspace = await openSession(page, {
+    name: "HeaderContext",
+    directory,
+    project: { name: "Project display name", sandboxes: [worktree] },
+    projects: [
+      project({ id: "proj_headercontext", directory, name: "Project display name", sandboxes: [worktree] }),
+      project({ id: "proj_other_context", directory: other, name: "Other display name", vcs: undefined }),
+    ],
+    sessions: [
+      a,
+      { ...b, directory: `${directory}/packages/app` },
+      { ...c, directory: worktree },
+      { id: "ses_header_other", title: "Other session", directory: other, projectID: "proj_other_context" },
+    ],
+    vcs: (value) => ({ current: value === worktree ? "feature/worktree-context" : "main", default: "main" }),
+  })
+  const header = page.locator("[data-session-title]:visible")
+  const select = async (id: string, title: string) => {
+    await page.locator(`a[data-titlebar-tab-link][href="${sessionHref(id)}"]`).click()
+    await expectSessionTitle(page, title)
+  }
+
+  await expect(header.getByText("Project display name", { exact: true })).toBeVisible()
+  await expect(header.getByText("main", { exact: true })).toBeVisible()
+  await expect(header.getByTitle(directory, { exact: true })).toHaveText("Project display name")
+  await expect(header.getByTitle("main", { exact: true })).toBeVisible()
+  await select(b.id, b.title)
+  await expect(header.getByText("Project display name", { exact: true })).toBeVisible()
+  await expect(header.getByText("main", { exact: true })).toBeVisible()
+  await select(c.id, c.title)
+  await expect(header.getByText("Project display name", { exact: true })).toBeVisible()
+  await expect(header.getByText("feature/worktree-context", { exact: true })).toBeVisible()
+  await workspace.push([
+    {
+      id: "evt_header_branch",
+      created: Date.now(),
+      location: { directory: worktree },
+      type: "vcs.branch.updated",
+      data: { branch: "feature/updated-context" },
+    },
+  ])
+  await expect(header.getByText("feature/updated-context", { exact: true })).toBeVisible()
+  await select("ses_header_other", "Other session")
+  await expect(header.getByText("Other display name", { exact: true })).toBeVisible()
+  await expect(header.getByText("Project display name", { exact: true })).toHaveCount(0)
+  await expect(header.getByText("main", { exact: true })).toHaveCount(0)
+  await expect(header.getByText("feature/updated-context", { exact: true })).toHaveCount(0)
+  await select(a.id, a.title)
+  await expect(header.getByText("Project display name", { exact: true })).toBeVisible()
+  await expect(header.getByText("main", { exact: true })).toBeVisible()
+  await page.setViewportSize({ width: 800, height: 700 })
+  await page.evaluate(() => document.documentElement.setAttribute("dir", "rtl"))
+  await expect(header.getByText("Project display name", { exact: true })).toBeVisible()
+  await expect(header.getByText("main", { exact: true })).toBeVisible()
+  await expect(header.getByRole("heading", { name: a.title, exact: true })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Toggle review", exact: true })).toBeVisible()
+})
+
 test("session tab backgrounds keep project colours across subdirectories, worktrees and reloads", async ({ page }) => {
   const directory = "C:/OpenCode/ProjectColours"
   const worktree = "C:/OpenCode/ProjectColours-worktree"

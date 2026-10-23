@@ -27,6 +27,7 @@ import { sessionHref } from "@/shell/routes/session"
 import { showToast } from "@/shell/notifications/toast"
 import { sessionTitle } from "./title"
 import { SessionWorkingIndicator } from "./header/session-working-indicator"
+import { SessionProjectContext } from "@/fork/session-project-context"
 import "./session-identity-header.css"
 
 export function SessionTitleHeader(props: ParentProps) {
@@ -90,122 +91,125 @@ export function SessionProjectMenu(props: {
   }
 
   return (
-    <Menu
-      placement="bottom-start"
-      gutter={4}
-      shift={-10}
-      modal={false}
-      open={state.open}
-      onOpenChange={(open) => setState({ open, pathFocused: false })}
-    >
-      <Tooltip placement="bottom" value={<bdi>{projectName()}</bdi>} class="flex shrink-0">
-        <Menu.Trigger
-          as={IconButton}
-          variant="ghost-muted"
-          aria-label={projectName()}
-          data-slot="session-project-trigger"
-          icon={
-            <span class="text-v2-icon-icon-muted">
-              <Icon name={props.workspace ? "outline-worktree" : "monitor"} />
-            </span>
-          }
-        />
-      </Tooltip>
-      <Menu.Portal>
-        <Menu.Content class="w-max max-w-[min(320px,calc(100vw-16px))]" aria-label={projectName()}>
-          <Tooltip
-            placement="top"
-            gutter={2}
-            disabled={!state.projectTruncated}
-            class="min-w-0 cursor-default"
-            contentClass="session-project-info-tooltip max-w-[min(480px,calc(100vw-16px))] whitespace-normal break-all"
-            value={<bdi>{projectName()}</bdi>}
-          >
-            <Menu.Item
-              class="min-w-0 w-full"
-              disabled={!props.project}
-              onSelect={() => {
-                const project = props.project
+    <>
+      <Menu
+        placement="bottom-start"
+        gutter={4}
+        shift={-10}
+        modal={false}
+        open={state.open}
+        onOpenChange={(open) => setState({ open, pathFocused: false })}
+      >
+        <Tooltip placement="bottom" value={<bdi>{projectName()}</bdi>} class="flex shrink-0">
+          <Menu.Trigger
+            as={IconButton}
+            variant="ghost-muted"
+            aria-label={projectName()}
+            data-slot="session-project-trigger"
+            icon={
+              <span class="text-v2-icon-icon-muted">
+                <Icon name={props.workspace ? "outline-worktree" : "monitor"} />
+              </span>
+            }
+          />
+        </Tooltip>
+        <Menu.Portal>
+          <Menu.Content class="w-max max-w-[min(320px,calc(100vw-16px))]" aria-label={projectName()}>
+            <Tooltip
+              placement="top"
+              gutter={2}
+              disabled={!state.projectTruncated}
+              class="min-w-0 cursor-default"
+              contentClass="session-project-info-tooltip max-w-[min(480px,calc(100vw-16px))] whitespace-normal break-all"
+              value={<bdi>{projectName()}</bdi>}
+            >
+              <Menu.Item
+                class="min-w-0 w-full"
+                disabled={!props.project}
+                onSelect={() => {
+                  const project = props.project
 
-                if (!project) return
-                server.ctx.projects.open(project.worktree)
-                layout.home.setSelection({ server: server.key, directory: project.worktree })
-                navigate("/")
-              }}
+                  if (!project) return
+                  server.ctx.projects.open(project.worktree)
+                  layout.home.setSelection({ server: server.key, directory: project.worktree })
+                  navigate("/")
+                }}
+              >
+                <span class="session-project-link-content">
+                  <ProjectAvatar
+                    class="shrink-0"
+                    aria-hidden="true"
+                    fallback={projectName()}
+                    src={getProjectAvatarSource(props.project?.id, props.project?.icon)}
+                    variant={getProjectAvatarVariant(props.project?.icon?.color)}
+                  />
+                  <bdi
+                    ref={(element) =>
+                      createResizeObserver(element, () =>
+                        setState("projectTruncated", element.scrollWidth > element.clientWidth),
+                      )
+                    }
+                    class="min-w-0 truncate text-13-medium"
+                  >
+                    {projectName()}
+                  </bdi>
+                </span>
+              </Menu.Item>
+            </Tooltip>
+            <Tooltip
+              placement="top"
+              gutter={2}
+              disabled={!state.pathTruncated}
+              forceOpen={state.pathFocused && state.pathTruncated ? true : undefined}
+              class="min-w-0 cursor-default"
+              contentClass="session-project-info-tooltip max-w-[min(480px,calc(100vw-16px))] whitespace-normal break-all"
+              value={<bdi dir="ltr">{props.directory}</bdi>}
             >
-              <span class="session-project-link-content">
-                <ProjectAvatar
-                  class="shrink-0"
-                  aria-hidden="true"
-                  fallback={projectName()}
-                  src={getProjectAvatarSource(props.project?.id, props.project?.icon)}
-                  variant={getProjectAvatarVariant(props.project?.icon?.color)}
-                />
-                <bdi
-                  ref={(element) =>
-                    createResizeObserver(element, () =>
-                      setState("projectTruncated", element.scrollWidth > element.clientWidth),
-                    )
-                  }
-                  class="min-w-0 truncate text-13-medium"
-                >
-                  {projectName()}
-                </bdi>
-              </span>
+              {/* Read-only paths stay in keyboard navigation so their full tooltip remains accessible. */}
+              <Menu.Item
+                class="session-project-link min-w-0 w-full cursor-default"
+                disabled={!props.directory}
+                aria-disabled={!canOpenPath()}
+                closeOnSelect={canOpenPath()}
+                onSelect={openPath}
+                onFocus={() => setState("pathFocused", true)}
+                onBlur={() => setState("pathFocused", false)}
+                onKeyDown={(event) => {
+                  if (event.key !== "Escape") return
+                  event.preventDefault()
+                  event.stopPropagation()
+                  setState({ open: false, pathFocused: false })
+                }}
+              >
+                <span class="session-project-link-content">
+                  <Icon name="folder" class="shrink-0 text-v2-icon-icon-muted" />
+                  <bdi
+                    ref={(element) =>
+                      createResizeObserver(element, () =>
+                        setState("pathTruncated", element.scrollWidth > element.clientWidth),
+                      )
+                    }
+                    dir="ltr"
+                    class="min-w-0 truncate text-v2-text-text-muted"
+                  >
+                    {props.directory}
+                  </bdi>
+                </span>
+                <span data-slot="session-project-open-icon" class="session-project-link-open" aria-hidden="true">
+                  <Icon name="arrow-up-right" />
+                </span>
+              </Menu.Item>
+            </Tooltip>
+            <Menu.Separator />
+            <Menu.Item disabled={!props.project} onSelect={openProjectSettings}>
+              <Icon name="settings-gear" class="text-v2-icon-icon-muted" />
+              {language.t("project.settings.title")}
             </Menu.Item>
-          </Tooltip>
-          <Tooltip
-            placement="top"
-            gutter={2}
-            disabled={!state.pathTruncated}
-            forceOpen={state.pathFocused && state.pathTruncated ? true : undefined}
-            class="min-w-0 cursor-default"
-            contentClass="session-project-info-tooltip max-w-[min(480px,calc(100vw-16px))] whitespace-normal break-all"
-            value={<bdi dir="ltr">{props.directory}</bdi>}
-          >
-            {/* Read-only paths stay in keyboard navigation so their full tooltip remains accessible. */}
-            <Menu.Item
-              class="session-project-link min-w-0 w-full cursor-default"
-              disabled={!props.directory}
-              aria-disabled={!canOpenPath()}
-              closeOnSelect={canOpenPath()}
-              onSelect={openPath}
-              onFocus={() => setState("pathFocused", true)}
-              onBlur={() => setState("pathFocused", false)}
-              onKeyDown={(event) => {
-                if (event.key !== "Escape") return
-                event.preventDefault()
-                event.stopPropagation()
-                setState({ open: false, pathFocused: false })
-              }}
-            >
-              <span class="session-project-link-content">
-                <Icon name="folder" class="shrink-0 text-v2-icon-icon-muted" />
-                <bdi
-                  ref={(element) =>
-                    createResizeObserver(element, () =>
-                      setState("pathTruncated", element.scrollWidth > element.clientWidth),
-                    )
-                  }
-                  dir="ltr"
-                  class="min-w-0 truncate text-v2-text-text-muted"
-                >
-                  {props.directory}
-                </bdi>
-              </span>
-              <span data-slot="session-project-open-icon" class="session-project-link-open" aria-hidden="true">
-                <Icon name="arrow-up-right" />
-              </span>
-            </Menu.Item>
-          </Tooltip>
-          <Menu.Separator />
-          <Menu.Item disabled={!props.project} onSelect={openProjectSettings}>
-            <Icon name="settings-gear" class="text-v2-icon-icon-muted" />
-            {language.t("project.settings.title")}
-          </Menu.Item>
-        </Menu.Content>
-      </Menu.Portal>
-    </Menu>
+          </Menu.Content>
+        </Menu.Portal>
+      </Menu>
+      <SessionProjectContext project={props.project} directory={props.directory} />
+    </>
   )
 }
 
